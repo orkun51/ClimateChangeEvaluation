@@ -14,9 +14,13 @@ else:
 # 📥 **Modeli Yükleme Fonksiyonu**
 @st.cache_resource
 def load_model():
-    interpreter = tf.lite.Interpreter(model_path=model_path)
-    interpreter.allocate_tensors()
-    return interpreter
+    try:
+        interpreter = tf.lite.Interpreter(model_path=model_path)
+        interpreter.allocate_tensors()
+        return interpreter
+    except Exception as e:
+        st.error(f"Model yüklenirken bir hata oluştu: {e}")
+        return None
 
 model = load_model()
 
@@ -50,29 +54,35 @@ st.write("Bir çizim yükleyerek değerlendirme sonucunu görebilirsiniz.")
 uploaded_file = st.file_uploader("📤 Çiziminizi yükleyin", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
-    # 🖼 **Görseli Göster**
-    image = Image.open(uploaded_file)
-    st.image(image, caption="🖌 Yüklenen Çizim", use_container_width=True)
+    try:
+        # 🖼 **Görseli Göster**
+        image = Image.open(uploaded_file)
+        st.image(image, caption="🖌 Yüklenen Çizim", use_container_width=True)
 
-    # 📌 **Görseli İşleme**
-    img = image.convert("RGB").resize((224, 224))  # Modelin beklediği boyut
-    img_array = np.array(img) / 255.0  # Normalizasyon
-    img_array = np.expand_dims(img_array, axis=0).astype(np.float32)  # Modelin beklediği şekle sokma
+        # 📌 **Görseli İşleme**
+        img = image.convert("RGB").resize((224, 224))  # Modelin beklediği boyut
+        img_array = np.array(img) / 255.0  # Normalizasyon
+        img_array = np.expand_dims(img_array, axis=0).astype(np.float32)  # Modelin beklediği şekle sokma
 
-    # **📊 Tahmin Al**
-    input_details = model.get_input_details()
-    output_details = model.get_output_details()
+        # **📊 Tahmin Al**
+        if model is not None:
+            input_details = model.get_input_details()
+            output_details = model.get_output_details()
 
-    model.set_tensor(input_details[0]['index'], img_array)
-    model.invoke()
-    prediction = model.get_tensor(output_details[0]['index'])
-    predicted_class = np.argmax(prediction)
-    confidence_score = np.max(prediction) * 100  # Güven skoru (%)
+            model.set_tensor(input_details[0]['index'], img_array)
+            model.invoke()
+            prediction = model.get_tensor(output_details[0]['index'])
+            predicted_class = np.argmax(prediction)
+            confidence_score = np.max(prediction) * 100  # Güven skoru (%)
 
-    # **🔍 Sonuçları Göster**
-    if predicted_class in kategori_aciklamalari:
-        st.success(f"🔍 **Tahmin Edilen Kategori:** {kategori_aciklamalari[predicted_class]}")
-        st.info(f"🎯 **Güven Skoru:** %{confidence_score:.2f}")
-        st.markdown(f"✍️ **Çizim Önerisi:** {cizim_onerileri[predicted_class]}")
-    else:
-        st.warning("⚠️ Model bir tahmin yapamadı, lütfen tekrar deneyin!")
+            # **🔍 Sonuçları Göster**
+            if predicted_class in kategori_aciklamalari:
+                st.success(f"🔍 **Tahmin Edilen Kategori:** {kategori_aciklamalari[predicted_class]}")
+                st.info(f"🎯 **Güven Skoru:** %{confidence_score:.2f}")
+                st.markdown(f"✍️ **Çizim Önerisi:** {cizim_onerileri[predicted_class]}")
+            else:
+                st.warning("⚠️ Model bir tahmin yapamadı, lütfen tekrar deneyin!")
+        else:
+            st.error("Model yüklenemedi, lütfen tekrar deneyin.")
+    except Exception as e:
+        st.error(f"Bir hata oluştu: {e}")
