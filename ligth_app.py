@@ -57,7 +57,7 @@ if uploaded_file is not None:
     try:
         # 🖼 **Görseli Göster**
         image = Image.open(uploaded_file)
-        st.image(image, caption="🖌 Yüklenen Çizim", use_container_width=True)
+        st.image(image, caption="🖌 Yüklenen Çizim")  # Removed use_container_width
 
         # 📌 **Görseli İşleme**
         img = image.convert("RGB").resize((224, 224))  # Modelin beklediği boyut
