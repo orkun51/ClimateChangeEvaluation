@@ -5,13 +5,13 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-# EXE içinden model dosyasını doğru bulmak için:
-if getattr(sys, 'frozen', False):  # Eğer PyInstaller ile paketlenmişse
+# 📦 Ensure model path is correctly resolved when bundled with PyInstaller
+if getattr(sys, 'frozen', False):  # If bundled with PyInstaller
     model_path = os.path.join(sys._MEIPASS, "quantized_model.tflite")
 else:
     model_path = "quantized_model.tflite"
 
-# 📥 **Modeli Yükleme Fonksiyonu**
+# 📥 Load Model Function
 @st.cache_resource
 def load_model():
     try:
@@ -19,52 +19,52 @@ def load_model():
         interpreter.allocate_tensors()
         return interpreter
     except Exception as e:
-        st.error(f"Model yüklenirken bir hata oluştu: {e}")
+        st.error(f"An error occurred while loading the model: {e}")
         return None
 
 model = load_model()
 
-# 🎨 **Kategori Açıklamaları**
-kategori_aciklamalari = {
-    0: "Karbon Salınımı (Fabrika ve Araba): Hava kirliliği, sanayi bacalarından çıkan dumanlar veya yoğun araç trafiği olabilir.",
-    1: "Ağaçlar ve Doğa: Yeşil alanlar, temiz hava ve doğayla ilgili unsurlar içeriyor olabilir.",
-    2: "Güneş ve Sıcaklık Değişimi: Güneşin etkisini, sıcak hava dalgalarını veya eriyen buzulları içerebilir.",
-    3: "Hava Kirliliği: Egzoz dumanları, kirli hava ve çevresel kirlilik unsurları içerebilir.",
-    4: "Kuraklık ve Susuzluk: Kuruyan topraklar, su kıtlığı çeken insanlar veya su kaynaklarının azalmasını içerebilir.",
-    5: "Buzulların Erimesi: Küresel ısınmanın etkisiyle eriyen buzullar ve yükselen deniz seviyesi olabilir.",
-    6: "İklim Değişikliği Etkileri: Doğal afetler, aşırı hava olayları ve ekolojik tahribat unsurlarını içerebilir."
+# 🧠 Category Descriptions
+category_descriptions = {
+    0: "Carbon Emission (Factory and Cars): May include air pollution, smoke from industrial chimneys, or heavy traffic.",
+    1: "Trees and Nature: May include green areas, clean air, and nature-related elements.",
+    2: "Sun and Temperature Change: May show the effect of the sun, heatwaves, or melting glaciers.",
+    3: "Air Pollution: May include exhaust fumes, dirty air, and other pollution elements.",
+    4: "Drought and Water Scarcity: May show dry soil, people struggling with water shortage, or shrinking water sources.",
+    5: "Melting Glaciers: May illustrate melting glaciers and rising sea levels due to global warming.",
+    6: "Effects of Climate Change: May include natural disasters, extreme weather events, and ecological destruction."
 }
 
-# 🎨 **Öğrencilere Çizim Önerileri**
-cizim_onerileri = {
-    0: "Sanayi bacalarından çıkan dumanları veya egzoz dumanlarını belirginleştirerek kirliliği vurgulayabilirsin.",
-    1: "Daha fazla ağaç, çiçek veya temiz su kaynakları ekleyerek doğanın güzelliğini ön plana çıkarabilirsin.",
-    2: "Güneş ışınlarını daha belirgin çizerek sıcaklık etkisini gösterebilirsin. Ayrıca terleyen insanlar eklemek de etkili olabilir!",
-    3: "Hava kirliliğini göstermek için dumanlı bir şehir manzarası veya maske takan insanlar çizebilirsin.",
-    4: "Kurumuş göller, çatlamış toprak veya susuzluktan etkilenen bitkiler ekleyerek daha güçlü bir mesaj verebilirsin.",
-    5: "Eriyen buz kütleleri ve sulara düşen buz parçalarını çizerek küresel ısınmanın etkisini vurgulayabilirsin.",
-    6: "Kasırgalar, fırtınalar veya orman yangınları gibi iklim değişikliğinin yol açtığı afetleri çizebilirsin."
+# 🎨 Drawing Suggestions for Students
+drawing_suggestions = {
+    0: "You can highlight pollution by emphasizing smoke from factory chimneys or exhaust fumes.",
+    1: "You can showcase nature’s beauty by adding more trees, flowers, or clean water sources.",
+    2: "You can draw more prominent sun rays to show the heat effect. Adding sweating people can also be effective!",
+    3: "You can depict air pollution with a smoky cityscape or people wearing masks.",
+    4: "You can illustrate the impact of drought with dried lakes, cracked soil, or affected plants.",
+    5: "You can emphasize global warming by drawing melting ice and falling ice blocks into the water.",
+    6: "You can depict disasters caused by climate change, such as hurricanes, storms, or forest fires."
 }
 
-# 🖌 **Çizim Değerlendirme Uygulaması Başlığı**
-st.markdown("<h1 style='text-align: center;'>🎨 İklim Değişikliği Çizim Değerlendirme Uygulaması</h1>", unsafe_allow_html=True)
-st.write("Bir çizim yükleyerek değerlendirme sonucunu görebilirsiniz.")
+# 🖌 App Title
+st.markdown("<h1 style='text-align: center;'>🎨 Climate Change Drawing Evaluation App</h1>", unsafe_allow_html=True)
+st.write("Upload a drawing to see the evaluation results.")
 
-# 📂 **Dosya Yükleme**
-uploaded_file = st.file_uploader("📤 Çiziminizi yükleyin", type=["jpg", "png", "jpeg"])
+# 📂 File Uploader
+uploaded_file = st.file_uploader("📤 Upload your drawing", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
     try:
-        # 🖼 **Görseli Göster**
+        # 🖼 Show Uploaded Image
         image = Image.open(uploaded_file)
-        st.image(image, caption="🖌 Yüklenen Çizim")  # Removed use_container_width
+        st.image(image, caption="🖌 Uploaded Drawing")
 
-        # 📌 **Görseli İşleme**
-        img = image.convert("RGB").resize((224, 224))  # Modelin beklediği boyut
-        img_array = np.array(img) / 255.0  # Normalizasyon
-        img_array = np.expand_dims(img_array, axis=0).astype(np.float32)  # Modelin beklediği şekle sokma
+        # 📌 Image Preprocessing
+        img = image.convert("RGB").resize((224, 224))  # Resize to model input size
+        img_array = np.array(img) / 255.0  # Normalize
+        img_array = np.expand_dims(img_array, axis=0).astype(np.float32)
 
-        # **📊 Tahmin Al**
+        # 📊 Get Prediction
         if model is not None:
             input_details = model.get_input_details()
             output_details = model.get_output_details()
@@ -73,16 +73,16 @@ if uploaded_file is not None:
             model.invoke()
             prediction = model.get_tensor(output_details[0]['index'])
             predicted_class = np.argmax(prediction)
-            confidence_score = np.max(prediction) * 100  # Güven skoru (%)
+            confidence_score = np.max(prediction) * 100
 
-            # **🔍 Sonuçları Göster**
-            if predicted_class in kategori_aciklamalari:
-                st.success(f"🔍 **Tahmin Edilen Kategori:** {kategori_aciklamalari[predicted_class]}")
-                st.info(f"🎯 **Güven Skoru:** %{confidence_score:.2f}")
-                st.markdown(f"✍️ **Çizim Önerisi:** {cizim_onerileri[predicted_class]}")
+            # 🔍 Display Results
+            if predicted_class in category_descriptions:
+                st.success(f"🔍 **Predicted Category:** {category_descriptions[predicted_class]}")
+                st.info(f"🎯 **Confidence Score:** {confidence_score:.2f}%")
+                st.markdown(f"✍️ **Drawing Suggestion:** {drawing_suggestions[predicted_class]}")
             else:
-                st.warning("⚠️ Model bir tahmin yapamadı, lütfen tekrar deneyin!")
+                st.warning("⚠️ The model could not make a prediction, please try again!")
         else:
-            st.error("Model yüklenemedi, lütfen tekrar deneyin.")
+            st.error("The model could not be loaded, please try again.")
     except Exception as e:
-        st.error(f"Bir hata oluştu: {e}")
+        st.error(f"An error occurred: {e}")
